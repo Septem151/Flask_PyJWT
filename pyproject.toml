@@ -1,0 +1,44 @@
+[tool.poetry]
+name = "flask_pyjwt"
+version = "0.1.0"
+description = "JWT Authentication extension for Flask"
+license = "MIT"
+authors = ["Carson Mullins <septem151@protonmail.com>"]
+readme = "README.rst"
+homepage = "https://github.com/Septem151/Flask_PyJWT"
+repository = "https://github.com/Septem151/Flask_PyJWT"
+keywords = ["flask", "authentication", "jwt", "security"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Framework :: Flask",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Security",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed"
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+PyJWT = "^2.1.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+black = "^21.5b1"
+isort = "^5.8.0"
+pylint = "^2.8.2"
+Sphinx = "^4.0.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.isort]
+profile = "black"
+
+[tool.pylint.messages_control]
+disable = "C0330, C0326"
+
+[tool.pylint.format]
+max-line-length = "88"
