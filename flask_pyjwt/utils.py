@@ -72,8 +72,6 @@ def _check_scope(
                 return False
             jwt_scope = jwt_scopes[scope]
             if isinstance(jwt_scope, dict) and isinstance(scope_value, dict):
-                # if not isinstance(scope_value, dict):
-                #     return False
                 return _check_scope(scope_value, jwt_scope)
             if isinstance(jwt_scope, (list, set)):
                 if not isinstance(scope_value, (list, set)) or not set(
