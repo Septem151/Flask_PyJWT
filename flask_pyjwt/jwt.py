@@ -137,8 +137,6 @@ class JWT:
         scope: t.Optional[t.Union[str, int, ClaimsDict]] = None,
         **kwargs: t.Optional[t.Union[str, int, ClaimsDict]],
     ) -> None:
-        for key, val in kwargs.items():
-            print(f"{key}: {val}")
         self.token_type = token_type
         self.claims: t.Dict[str, t.Any] = {"sub": sub, "type": token_type.value}
         if scope:

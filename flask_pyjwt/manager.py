@@ -83,7 +83,12 @@ class AuthManager:
     """
 
     default_auth_max_age = 3600
+    """:obj:`int`: The default max age for an ``auth`` token.
+    """
+
     default_refresh_max_age = 604800
+    """:obj:`int`: The default max age for a ``refresh`` token.
+    """
 
     def __init__(self, app: t.Optional[Flask] = None) -> None:
         if app is not None:

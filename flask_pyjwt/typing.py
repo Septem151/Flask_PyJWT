@@ -4,6 +4,11 @@ from enum import Enum, unique
 ClaimsDict = t.Dict[  # type: ignore
     str, t.Optional[t.Union[int, str, list, set, bool, "ClaimsDict"]]  # type: ignore
 ]
+"""Type alias representing a token claim that is a :obj:`dict`.
+
+Claims within a ``ClaimsDict`` can be an :obj:`int`, :obj:`str`, :obj:`list`,
+:obj:`set`, :obj:`bool`, or another ``ClaimsDict``.
+"""
 
 
 class AuthTypeMixin(t.NamedTuple):

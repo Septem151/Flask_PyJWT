@@ -13,6 +13,8 @@ from .manager import AuthManager
 from .typing import ClaimsDict, TokenType
 
 AUTH_HEADER_RE = re.compile(r"^Bearer {1}\S*$", re.IGNORECASE)
+"""Regex expression for an Authorization token following the "Bearer" schema.
+"""
 
 
 def is_valid_auth_header(auth_header: str) -> bool:
@@ -41,6 +43,12 @@ def require_token(
 
     Optionally, required claims in the ``scope`` can be checked for authorization.
     Additional ``kwargs`` can be supplied for checking the presence of other claims.
+    Route variable rules can be used in the decorator by passing an argument with the
+    name of the claim you want equal to the variable rule, and the value of the argument
+    being equal to the name of the variable rule.
+
+    Note:
+        This decorator must be put **AFTER** the flask app's ``route`` decorator.
 
     Args:
         token_type: Type of token to require ("auth" or "refresh"). Defaults to "auth".
@@ -50,6 +58,7 @@ def require_token(
             is set to "cookies". Defaults to None.
         scope: Optional claims to check in the token's ``scope`` for authorization.
             Defaults to None.
+        **kwargs: Additional claims that must be present on the token for authorization.
 
     Raises:
         :class:`ValueError`: If ``token_type`` or ``location`` is not a valid value.
@@ -58,13 +67,19 @@ def require_token(
 
     Usage::
 
-        >>> @app.route("/user/<str:user_id>", methods=["POST"])
-        >>> @require_token("auth", "cookies", cookie_name="auth_token", sub=user_id)
+        >>> @app.route("/user/<string:user_id>", methods=["POST"])
+        >>> @require_token(
+        >>>     "auth",
+        >>>     "cookies",
+        >>>     cookie_name="auth_token",
+        >>>     sub="user_id",
+        >>>     custom_claim="Flask_PyJWT",
+        >>> )
         >>> def post_user(user_id: str):
         >>>     # If a cookie called "auth_token" in the request
         >>>     # does not have a valid auth token, aborts with 401 Unauthorized.
-        >>>     # If the token doesn't have a "sub" claim of user_id,
-        >>>     # abort with 403 Forbidden.
+        >>>     # If the token doesn't have a "sub" claim of user_id
+        >>>     # or "custom_claim" of "FlaskPyJWT", abort with 403 Forbidden.
         >>>     # ... some code to modify the user with id of user_id ...
         >>>     return ...
 
@@ -76,7 +91,7 @@ def require_token(
     if location == "cookies":
         if not cookie_name:
             raise AttributeError('cookie_name must be set when location is "cookies"')
-    required_claims = kwargs
+    required_claim_keys = kwargs
 
     def decorator(func):
         @wraps(func)
@@ -102,9 +117,19 @@ def require_token(
                 abort(
                     HTTPStatus.UNAUTHORIZED, f"Invalid token type of {jwt.token_type}"
                 )
-            if required_claims and not _check_scope(required_claims, jwt.claims):
+            required_claims = {}
+            for key, val in kwargs.items():
+                if key in required_claim_keys.values():
+                    claim_key = list(required_claim_keys.keys())[
+                        list(required_claim_keys.values()).index(key)
+                    ]
+                    required_claims[claim_key] = val
+                required_claim_keys.pop(claim_key)
+            for key, val in required_claim_keys.items():
+                required_claims[key] = val
+            if required_claims and not _check_claims(required_claims, jwt.claims):
                 abort(HTTPStatus.FORBIDDEN, "Missing required claim(s)")
-            if scope and not _check_scope(scope, jwt.claims.get("scope")):
+            if scope and not _check_claims(scope, jwt.claims.get("scope")):
                 abort(HTTPStatus.FORBIDDEN, "Missing required scope(s)")
             _add_jwt_to_request_ctx(jwt)
             return func(*args, **kwargs)
@@ -114,35 +139,60 @@ def require_token(
     return decorator
 
 
-def _check_scope(
-    required_scopes: t.Union[str, int, ClaimsDict],
-    jwt_scopes: t.Optional[t.Union[str, int, ClaimsDict]],
+def _check_claims(
+    required_claims: t.Union[str, int, ClaimsDict],
+    jwt_claims: t.Optional[t.Union[str, int, ClaimsDict]],
 ) -> bool:
-    if isinstance(required_scopes, dict):
-        for scope, scope_value in required_scopes.items():
-            if not isinstance(jwt_scopes, dict) or scope not in jwt_scopes:
+    """Checks a token's claims and/or scope for the presence of the ``required_claims``
+    values.
+
+    Args:
+        required_claims: The required claims or scopes.
+        jwt_claims: The token's claims or scopes.
+
+    Returns:
+        True if the token's claims has all required claims, otherwise False.
+    """
+    if isinstance(required_claims, dict):
+        for claim, claim_value in required_claims.items():
+            if not isinstance(jwt_claims, dict) or claim not in jwt_claims:
                 return False
-            jwt_scope = jwt_scopes[scope]
-            if isinstance(jwt_scope, dict) and isinstance(scope_value, dict):
-                return _check_scope(scope_value, jwt_scope)
-            if isinstance(jwt_scope, (list, set)):
-                if not isinstance(scope_value, (list, set)) or not set(
-                    scope_value
-                ).issubset(jwt_scope):
+            jwt_claim = jwt_claims[claim]
+            if isinstance(jwt_claim, dict) and isinstance(claim_value, dict):
+                return _check_claims(claim_value, jwt_claim)
+            if isinstance(jwt_claim, (list, set)):
+                if not isinstance(claim_value, (list, set)) or not set(
+                    claim_value
+                ).issubset(jwt_claim):
                     return False
-            elif scope_value != jwt_scope:
+            elif claim_value != jwt_claim:
                 return False
-    elif required_scopes != jwt_scopes:
+    elif required_claims != jwt_claims:
         return False
     return True
 
 
 def _add_jwt_to_request_ctx(jwt_token: JWT) -> None:
+    """Adds a :class:`~flask_pyjwt.jwt.JWT` object to the current request's context.
+
+    Args:
+        jwt_token: Token to add to the request's context.
+    """
     ctx = _request_ctx_stack.top
     ctx.jwt_token = jwt_token
 
 
 def _get_jwt() -> JWT:
+    """Returns the :class:`~flask_pyjwt.jwt.JWT` object from the current
+    request's context.
+
+    Raises:
+        :class:`RuntimeError`: If the current request's context is not available or is
+            missing the ``jwt_token`` attribute.
+
+    Returns:
+        The :class:`~flask_pyjwt.jwt.JWT` object from the request's context.
+    """
     if has_request_context() and hasattr(_request_ctx_stack.top, "jwt_token"):
         jwt_token: JWT = getattr(_request_ctx_stack.top, "jwt_token")
         return jwt_token
@@ -150,3 +200,5 @@ def _get_jwt() -> JWT:
 
 
 current_token: JWT = LocalProxy(_get_jwt)  # type: ignore
+""":class:`~flask_pyjwt.jwt.JWT`: A proxy variable for the current token being used.
+"""
