@@ -66,31 +66,22 @@ def _check_scope(
     required_scopes: t.Union[str, int, ClaimsDict],
     jwt_scopes: t.Optional[t.Union[str, int, ClaimsDict]],
 ) -> bool:
-    if not jwt_scopes:
-        return False
     if isinstance(required_scopes, dict):
-        if not isinstance(jwt_scopes, dict):
-            return False
         for scope, scope_value in required_scopes.items():
-            if scope not in jwt_scopes:
+            if not isinstance(jwt_scopes, dict) or scope not in jwt_scopes:
                 return False
             jwt_scope = jwt_scopes[scope]
-            if isinstance(jwt_scope, dict):
-                if not isinstance(scope_value, dict):
-                    return False
+            if isinstance(jwt_scope, dict) and isinstance(scope_value, dict):
+                # if not isinstance(scope_value, dict):
+                #     return False
                 return _check_scope(scope_value, jwt_scope)
             if isinstance(jwt_scope, (list, set)):
-                if not isinstance(scope_value, (list, set)):
-                    return False
-                if not set(scope_value).issubset(jwt_scope):
+                if not isinstance(scope_value, (list, set)) or not set(
+                    scope_value
+                ).issubset(jwt_scope):
                     return False
             elif scope_value != jwt_scope:
                 return False
-    elif isinstance(required_scopes, (list, set)):
-        if not isinstance(jwt_scopes, (list, set)):
-            return False
-        if not set(required_scopes).issubset(jwt_scopes):
-            return False
     elif required_scopes != jwt_scopes:
         return False
     return True
