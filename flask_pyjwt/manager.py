@@ -1,13 +1,12 @@
-"""Auth Management functions and classes.
-"""
-
+import typing as t
 from functools import wraps
-from typing import Optional, Union
 
 import jwt as PyJWT
+from flask import Flask
 
 from .errors import InvalidConfigError, MissingConfigError, MissingSignerError
-from .jwt import JWT, AuthData, AuthType, ClaimsDict, TokenType
+from .jwt import JWT, AuthData
+from .typing import AuthType, ClaimsDict, TokenType
 
 
 def _requires_signer(func):
@@ -35,10 +34,15 @@ class AuthManager:
     default_auth_max_age = 3600
     default_refresh_max_age = 604800
 
-    def __init__(self, signer: Optional[AuthData] = None) -> None:
+    def __init__(
+        self, app: t.Optional[Flask] = None, signer: t.Optional[AuthData] = None
+    ) -> None:
         self.signer = signer
+        if app is not None:
+            self.app = app
+            self.init_app(app)
 
-    def init_app(self, flask_app) -> None:
+    def init_app(self, app: Flask) -> None:
         """Initializes the ``signer`` values to config values set in a flask app.
 
         Required config values are:
@@ -56,7 +60,7 @@ class AuthManager:
             by this auth manager are valid for.
 
         Args:
-            flask_app: A flask application to retrieve config values from.
+            app: A flask application to retrieve config values from.
 
         Raises:
             :class:`MissingConfigError`: If a required config key is missing
@@ -66,24 +70,24 @@ class AuthManager:
         """
         req_configs = ("JWT_ISSUER", "JWT_AUTHTYPE", "JWT_SECRET")
         for config_value in req_configs:
-            if not flask_app.config.get(config_value):
+            if not app.config.get(config_value):
                 raise MissingConfigError(config_value)
         try:
-            auth_type = AuthType[flask_app.config["JWT_AUTHTYPE"]]
+            auth_type = AuthType[app.config["JWT_AUTHTYPE"]]
         except KeyError as error:
             raise InvalidConfigError("JWT_AUTHTYPE", "Invalid auth type") from error
-        secret = flask_app.config["JWT_SECRET"]
+        secret = app.config["JWT_SECRET"]
         if not isinstance(secret, auth_type.secret_type):
             raise InvalidConfigError("JWT_SECRET", "Secret is of the wrong type")
-        issuer = flask_app.config["JWT_ISSUER"]
+        issuer = app.config["JWT_ISSUER"]
         if not isinstance(issuer, str):
             raise InvalidConfigError("JWT_ISSUER", "Issuer must be a str")
-        auth_max_age = flask_app.config.get(
+        auth_max_age = app.config.get(
             "JWT_AUTHMAXAGE", AuthManager.default_auth_max_age
         )
         if not isinstance(auth_max_age, int):
             raise InvalidConfigError("JWT_AUTHMAXAGE", "Auth Max Age must be an int")
-        refresh_max_age = flask_app.config.get(
+        refresh_max_age = app.config.get(
             "JWT_REFRESHMAXAGE", AuthManager.default_refresh_max_age
         )
         if not isinstance(refresh_max_age, int):
@@ -91,13 +95,14 @@ class AuthManager:
                 "JWT_REFRESHMAXAGE", "Refresh Max Age must be an int"
             )
         self.signer = AuthData(auth_type, secret, issuer, auth_max_age, refresh_max_age)
+        app.auth_manager = self
 
     @_requires_signer
     def auth_token(
         self,
-        subject: Union[str, int],
-        scope: Optional[Union[str, ClaimsDict]] = None,
-        **kwargs: Optional[Union[str, int, ClaimsDict]],
+        subject: t.Union[str, int],
+        scope: t.Optional[t.Union[str, ClaimsDict]] = None,
+        **kwargs: t.Optional[t.Union[str, int, ClaimsDict]],
     ) -> JWT:
         auth_token = JWT(TokenType.AUTH, subject, scope, **kwargs)
         assert self.signer is not None
@@ -107,7 +112,7 @@ class AuthManager:
     @_requires_signer
     def refresh_token(
         self,
-        subject: Union[str, int],
+        subject: t.Union[str, int],
     ) -> JWT:
         if self.signer is None:
             raise MissingSignerError()
@@ -116,7 +121,7 @@ class AuthManager:
         return refresh_token
 
     @_requires_signer
-    def verify_token(self, token: Union[JWT, str]) -> bool:
+    def verify_token(self, token: t.Union[JWT, str]) -> bool:
         try:
             if not isinstance(token, JWT):
                 token = self.convert_token(token)

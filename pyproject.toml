@@ -22,6 +22,7 @@ classifiers = [
 [tool.poetry.dependencies]
 python = "^3.8"
 PyJWT = "^2.1.0"
+Flask = "^1.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
@@ -42,7 +43,9 @@ profile = "black"
 max-args = 6
 
 [tool.pylint.messages_control]
-disable = "C0330, C0326"
+# Disable bad-continuation, bad-whitespace, missing-module-docstring,
+#   too-many-return-statements, too-many-branches
+disable = "C0330, C0326, C0114, R0911, R0912"
 
 [tool.pylint.format]
 max-line-length = "88"

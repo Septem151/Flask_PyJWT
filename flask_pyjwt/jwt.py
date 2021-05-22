@@ -1,90 +1,14 @@
-"""JWT-related type and object declarations.
-"""
 import base64
 import json
 import secrets
 import time
-from enum import Enum, unique
-from typing import Any, Dict, NamedTuple, Optional, Type, Union
+import typing as t
 
 from jwt import InvalidKeyError, InvalidTokenError
 from jwt import decode as pyjwt_decode
 from jwt import encode as pyjwt_encode
 
-ClaimsDict = Dict[  # type: ignore
-    str, Optional[Union[int, str, "ClaimsDict", list, set]]  # type: ignore
-]
-
-
-class AuthTypeMixin(NamedTuple):
-    """Mixin class for the :class:`AuthType` enum.
-
-    Contains valid type definitions for a secret key used in signing a JWT.
-
-    Args:
-        secret_key (:obj:`type`): The type definition for a secret key.
-
-    Example:
-        >>> AuthTypeMixin(str)
-        AuthTypeMixin(secret_type=<class 'str'>)
-    """
-
-    secret_type: Union[Type[str], Type[bytes]]
-
-
-class AuthType(AuthTypeMixin, Enum):
-    """Enum of values for valid JWT auth types.
-
-    Auth types determine how the JWT signature is created.
-
-    Tokens signed using HMAC can only be verified by those
-    that have the secret key.
-
-    Tokens signed using RSA can only be verified by those
-    that have the RSA public key associated with the signer's
-    private key.
-
-    Attributes:
-        name (:obj:`str`): Name of the enum value, this is placed inside of the JWT.
-        secret_type (:obj:`type`): Type of secret key that needs to be used,
-            whether it's a ``bytes`` key or ``str``. See :class:`AuthTypeMixin`
-
-    Examples:
-        >>> AuthType.RS256.name
-        'RS256'
-
-        >>> AuthType.RS256.secret_type
-        <class 'bytes'>
-    """
-
-    RS256 = AuthTypeMixin(bytes)
-    RS512 = AuthTypeMixin(bytes)
-    HS256 = AuthTypeMixin(str)
-    HS512 = AuthTypeMixin(str)
-
-
-@unique
-class TokenType(Enum):
-    """Enum of values for valid JWT types.
-
-    Token types include "auth" and "refresh".
-    Auth tokens are used for short-term access to resources,
-    and Refresh tokens are used for requesting new Auth tokens.
-
-    Attributes:
-        name (:obj:`str`): Name of the enum value.
-        value (:obj:`str`): Value that is placed inside the JWT.
-
-    Examples:
-        >>> TokenType.AUTH.name
-        'AUTH'
-
-        >>> TokenType.AUTH.value
-        'auth'
-    """
-
-    AUTH = "auth"
-    REFRESH = "refresh"
+from .typing import AuthType, ClaimsDict, TokenType
 
 
 class AuthData:
@@ -123,7 +47,7 @@ class AuthData:
     def __init__(
         self,
         auth_type: AuthType,
-        secret: Union[bytes, str],
+        secret: t.Union[bytes, str],
         issuer: str,
         auth_max_age: int,
         refresh_max_age: int,
@@ -147,8 +71,8 @@ class AuthData:
         return self.auth_type.name
 
     def extend_claims(
-        self, token_type: TokenType, claims: Dict[str, Union[str, int, ClaimsDict]]
-    ) -> Dict[str, Union[str, int, ClaimsDict]]:
+        self, token_type: TokenType, claims: t.Dict[str, t.Union[str, int, ClaimsDict]]
+    ) -> t.Dict[str, t.Union[str, int, ClaimsDict]]:
         """Returns modified claims for a JWT to be signed.
 
         Adds an ``iss``, ``iat``, and ``exp`` key to the claims dict.
@@ -169,7 +93,7 @@ class AuthData:
             }
 
         """
-        extended_claims: Dict[str, Union[str, int, ClaimsDict]] = {}
+        extended_claims: t.Dict[str, t.Union[str, int, ClaimsDict]] = {}
         current_time = int(time.time())
         expiry_time = current_time
         if token_type == TokenType.AUTH:
@@ -210,17 +134,17 @@ class JWT:
     def __init__(
         self,
         token_type: TokenType,
-        sub: Union[str, int],
-        scope: Optional[Union[str, ClaimsDict]] = None,
-        **kwargs: Optional[Union[str, int, ClaimsDict]],
+        sub: t.Union[str, int],
+        scope: t.Optional[t.Union[str, int, ClaimsDict]] = None,
+        **kwargs: t.Optional[t.Union[str, int, ClaimsDict]],
     ) -> None:
         self.token_type = token_type
-        self.claims: Dict[str, Any] = {"sub": sub, "type": token_type.value}
+        self.claims: t.Dict[str, t.Any] = {"sub": sub, "type": token_type.value}
         if scope:
             self.claims["scope"] = scope
         for key, value in kwargs.items():
             self.claims[key] = value
-        self.signed: Optional[str] = None
+        self.signed: t.Optional[str] = None
 
     def sign(self, auth_data: AuthData) -> str:
         """Signs this JWT, setting the ``iat`` to be the current time
