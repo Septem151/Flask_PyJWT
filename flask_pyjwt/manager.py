@@ -4,9 +4,9 @@ from functools import wraps
 import jwt as PyJWT
 from flask import Flask
 
-from .errors import InvalidConfigError, MissingConfigError, MissingSignerError
+from .exceptions import InvalidConfigError, MissingConfigError, MissingSignerError
 from .jwt import JWT, AuthData
-from .typing import AuthType, ClaimsDict, TokenType
+from .typing import AuthType, TokenType
 
 
 def _requires_signer(func):
@@ -40,6 +40,7 @@ class AuthManager:
     passing the Flask app directly into the constructor.
 
     Required config values are:
+
         * ``JWT_ISSUER`` (:obj:`str`): The issuer of JWTs created by this
             auth manager.
         * ``JWT_AUTHTYPE`` (:obj:`str`): The type of auth to use (ex: ``HS256``)
@@ -48,29 +49,30 @@ class AuthManager:
             signing JWTs created by this auth manager.
 
     Optional config values include:
-    * ``JWT_AUTHMAXAGE`` (:obj:`int`): How long auth JWTs created by this
-        auth manager are valid for.
-    * ``JWT_REFRESHMAXAGE`` (:obj:`int`): How long refresh JWTs created
-        by this auth manager are valid for.
+
+        * ``JWT_AUTHMAXAGE`` (:obj:`int`): How long auth JWTs created by this
+            auth manager are valid for.
+        * ``JWT_REFRESHMAXAGE`` (:obj:`int`): How long refresh JWTs created
+            by this auth manager are valid for.
 
     Initializing::
 
-        >>> app = Flask(__name__)
-        >>> auth_manager = AuthManager(app)
-        >>> # or alternatively:
-        >>> auth_manager = AuthManager()
-        >>> auth_manager.init_app(app)
+        app = Flask(__name__)
+        auth_manager = AuthManager(app)
+        # or alternatively:
+        auth_manager = AuthManager()
+        auth_manager.init_app(app)
 
     Example Usage::
 
-        >>> @app.route("/token/<str:user_id>", methods=["POST"])
-        >>> def index(user_id: str):
-        >>>     auth_token = auth_manager.auth_token(
-        >>>         subject=user_id,
-        >>>         scope={"admin": True},
-        >>>         custom_claim="Flask_PyJWT"
-        >>>     )
-        >>>     return {"auth_token": auth_token.signed}
+        @app.route("/token/<str:user_id>", methods=["POST"])
+        def index(user_id: str):
+            auth_token = auth_manager.auth_token(
+                subject=user_id,
+                scope={"admin": True},
+                custom_claim="Flask_PyJWT"
+            )
+            return {"auth_token": auth_token.signed}
 
     Args:
         app (:class:`~flask.Flask`): A flask application to retrieve config values from.
@@ -82,11 +84,11 @@ class AuthManager:
             is of the wrong type or an unacceptable value.
     """
 
-    default_auth_max_age = 3600
+    default_auth_max_age: int = 3600
     """:obj:`int`: The default max age for an ``auth`` token.
     """
 
-    default_refresh_max_age = 604800
+    default_refresh_max_age: int = 604800
     """:obj:`int`: The default max age for a ``refresh`` token.
     """
 
@@ -96,11 +98,11 @@ class AuthManager:
             self.init_app(app)
 
     def init_app(self, app: Flask) -> None:
-        """Initializes this :class:`AuthManager` with the config values in ``app``,
+        """Initializes an :class:`AuthManager` with the config values in ``app``,
         and attaches itself to the flask app.
 
         Args:
-            app (:class:`~flask.Flask`): A flask application to retrieve config
+            app: A flask application to retrieve config
                 values from.
 
         Raises:
@@ -142,14 +144,15 @@ class AuthManager:
     def auth_token(
         self,
         subject: t.Union[str, int],
-        scope: t.Optional[t.Union[str, ClaimsDict]] = None,
-        **kwargs: t.Optional[t.Union[str, int, ClaimsDict]],
+        scope: t.Optional[t.Union[str, dict]] = None,
+        **kwargs: t.Optional[t.Union[str, int, dict]],
     ) -> JWT:
         """Generates a new :class:`~flask_pyjwt.jwt.JWT` with the claims provided.
 
         Args:
-            subject: Value for the ``sub`` claim.
-            scope: Optional ``scope`` claim for authorizations. Defaults to None.
+            subject (:obj:`str` | :obj:`int`): Value for the ``sub`` claim.
+            scope (:obj:`str` | :obj:`dict`): Optional ``scope`` claim for
+                authorizations. Defaults to ``None``.
 
         Returns:
             :class:`~flask_pyjwt.jwt.JWT`: Token with a ``type`` claim of "auth".
@@ -174,16 +177,14 @@ class AuthManager:
         """Generates a new :class:`~flask_pyjwt.jwt.JWT` with the claims provided.
 
         Args:
-            subject: Value for the ``sub`` claim.
+            subject (:obj:`str` | :obj:`int`): Value for the ``sub`` claim.
 
         Returns:
             :class:`~flask_pyjwt.jwt.JWT`: Token with a ``type`` claim of "refresh".
 
         Example::
 
-            >>> refresh_token = auth_manager.refresh_token(subject="Flask_PyJWT")
-            >>> refresh_token.is_signed()
-            True
+            refresh_token = auth_manager.refresh_token(subject="Flask_PyJWT")
 
         """
         if self.signer is None:
@@ -198,12 +199,12 @@ class AuthManager:
         by this :class:`AuthManager` and is not in an invalid format or encoding.
 
         Args:
-            token: The JWT to verify.
+            token (:class:`~flask_pyjwt.jwt.JWT` | :obj:`str`): The JWT to verify.
 
         Returns:
-            bool: True if the JWT has a valid signature, has required claims, and
-                has the required claims of ``iat``, ``exp``, and ``iss``, otherwise
-                False.
+            :obj:`bool`: True if the JWT has a valid signature, has required claims, and
+            has the required claims of ``iat``, ``exp``, and ``iss``, otherwise
+            False.
 
         Note:
             This function does **NOT** verify additional custom claims nor scope.
@@ -244,10 +245,11 @@ class AuthManager:
         """Converts a signed encoded JWT into a :class:`~flask_pyjwt.jwt.JWT` object.
 
         Args:
-            signed_token: A properly encoded JWT.
+            signed_token (:obj:`str`): A properly encoded JWT.
 
         Returns:
-            JWT: The signed and encoded JWT as a :class:`~flask_pyjwt.jwt.JWT` object.
+            :class:`~flask_pyjwt.jwt.JWT`: The signed and encoded JWT as a
+            :class:`~flask_pyjwt.jwt.JWT` object.
 
         Raises:
             ``InvalidTokenError``: If the ``signed_token`` parameter is not

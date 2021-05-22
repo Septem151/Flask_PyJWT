@@ -9,7 +9,7 @@ class MissingConfigError(Exception):
     :class:`~flask_pyjwt.manager.AuthManager` object.
 
     Args:
-        config_value: The config value that raised this exception.
+        config_value (:obj:`str`): The config value that raised this exception.
     """
 
     def __init__(self, config_value: str) -> None:
@@ -25,8 +25,8 @@ class InvalidConfigError(Exception):
     that is not allowed in an :class:`~flask_pyjwt.manager.AuthManager` object.
 
     Args:
-        config_value: The config value that raised this exception.
-        message: A message describing what the valid config values are.
+        config_value (:obj:`str`): The config value that raised this exception.
+        message (:obj:`str`): A message describing what the valid config values are.
     """
 
     def __init__(self, config_value: str, message: str) -> None:

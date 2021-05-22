@@ -1,15 +1,6 @@
 import typing as t
 from enum import Enum, unique
 
-ClaimsDict = t.Dict[  # type: ignore
-    str, t.Optional[t.Union[int, str, list, set, bool, "ClaimsDict"]]  # type: ignore
-]
-"""Type alias representing a token claim that is a :obj:`dict`.
-
-Claims within a ``ClaimsDict`` can be an :obj:`int`, :obj:`str`, :obj:`list`,
-:obj:`set`, :obj:`bool`, or another ``ClaimsDict``.
-"""
-
 
 class AuthTypeMixin(t.NamedTuple):
     """Mixin class for the :class:`AuthType` enum.
@@ -17,21 +8,15 @@ class AuthTypeMixin(t.NamedTuple):
     Contains valid type definitions for a secret key used in signing a JWT.
 
     Args:
-        secret_key (:obj:`type`): The type definition for a secret key.
-
-    Example:
-        >>> AuthTypeMixin(str)
-        AuthTypeMixin(secret_type=<class 'str'>)
-
+        secret_type (:obj:`type`): Type of secret key that needs to be used,
+            whether it's a ``bytes`` key or ``str``.
     """
 
     secret_type: t.Union[t.Type[str], t.Type[bytes]]
 
 
 class AuthType(AuthTypeMixin, Enum):
-    """Enum of values for valid JWT auth types.
-
-    Auth types determine how the JWT signature is created.
+    """Auth types determine how the JWT signature is created.
 
     Tokens signed using HMAC can only be verified by those
     that have the secret key.
@@ -42,16 +27,6 @@ class AuthType(AuthTypeMixin, Enum):
 
     Attributes:
         name (:obj:`str`): Name of the enum value, this is placed inside of the JWT.
-        secret_type (:obj:`type`): Type of secret key that needs to be used,
-            whether it's a ``bytes`` key or ``str``. See :class:`AuthTypeMixin`
-
-    Examples:
-        >>> AuthType.RS256.name
-        'RS256'
-
-        >>> AuthType.RS256.secret_type
-        <class 'bytes'>
-
     """
 
     RS256 = AuthTypeMixin(bytes)
@@ -71,14 +46,6 @@ class TokenType(Enum):
     Attributes:
         name (:obj:`str`): Name of the enum value.
         value (:obj:`str`): Value that is placed inside the JWT.
-
-    Examples:
-        >>> TokenType.AUTH.name
-        'AUTH'
-
-        >>> TokenType.AUTH.value
-        'auth'
-
     """
 
     AUTH = "auth"
