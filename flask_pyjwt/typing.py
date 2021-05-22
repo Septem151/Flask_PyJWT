@@ -17,6 +17,7 @@ class AuthTypeMixin(t.NamedTuple):
     Example:
         >>> AuthTypeMixin(str)
         AuthTypeMixin(secret_type=<class 'str'>)
+
     """
 
     secret_type: t.Union[t.Type[str], t.Type[bytes]]
@@ -45,6 +46,7 @@ class AuthType(AuthTypeMixin, Enum):
 
         >>> AuthType.RS256.secret_type
         <class 'bytes'>
+
     """
 
     RS256 = AuthTypeMixin(bytes)
@@ -71,6 +73,7 @@ class TokenType(Enum):
 
         >>> TokenType.AUTH.value
         'auth'
+
     """
 
     AUTH = "auth"

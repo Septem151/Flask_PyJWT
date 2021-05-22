@@ -4,9 +4,9 @@ import secrets
 import time
 import typing as t
 
-from jwt import InvalidKeyError, InvalidTokenError
 from jwt import decode as pyjwt_decode
 from jwt import encode as pyjwt_encode
+from jwt.exceptions import InvalidKeyError, InvalidTokenError
 
 from .typing import AuthType, ClaimsDict, TokenType
 
@@ -32,16 +32,15 @@ class AuthData:
         auth_max_age: The max age for a JWT with :class:`TokenType` of ``AUTH``.
         refresh_max_age: The max age for a JWT with :class:`TokenType` of ``REFRESH``.
 
-    Raises:
-        TypeError: If the ``secret`` parameter's type does not match the type
-            specified in the ``auth_type`` parameter's secret type.
-
     Example::
 
         auth_data = AuthData(AuthType.HS256, "SECRETKEY", "Flask_PyJWT", 120, 3600)
         jwt_token = JWT(TokenType.AUTH, "SomeSubjectID")
         signed_token = jwt_token.sign(auth_data)
 
+    Raises:
+        :class:`TypeError`: If the ``secret`` parameter's type does not match the type
+            specified in the ``auth_type`` parameter's secret type.
     """
 
     def __init__(
@@ -138,6 +137,8 @@ class JWT:
         scope: t.Optional[t.Union[str, int, ClaimsDict]] = None,
         **kwargs: t.Optional[t.Union[str, int, ClaimsDict]],
     ) -> None:
+        for key, val in kwargs.items():
+            print(f"{key}: {val}")
         self.token_type = token_type
         self.claims: t.Dict[str, t.Any] = {"sub": sub, "type": token_type.value}
         if scope:
@@ -151,7 +152,8 @@ class JWT:
         when this function is called.
 
         Args:
-            auth_data: The `AuthData` object containing relevant signing information.
+            auth_data: The :class:`AuthData` object containing relevant
+                signing information.
 
         Returns:
             An encoded JWT with valid signature containing all claims
@@ -171,7 +173,7 @@ class JWT:
         """Returns whether this JWT has been signed.
 
         Returns:
-            True if signed, False if not.
+            True if ``signed`` attribute is not ``None``, False if not.
         """
         return self.signed is not None
 
@@ -179,14 +181,14 @@ class JWT:
     def from_signed_token(cls, signed_token: str) -> "JWT":
         """Converts a signed JWT into a :class:`JWT` object
 
-        Raises:
-            ``InvalidTokenError``: If the ``signed_token`` parameter is not
-                a valid token or does not contain the required claims
-                "exp", "iss", "sub", "iat", and "type".
-
         Returns:
             :class:`JWT`: A :class:`JWT` object containing the data from the
                 ``signed_token`` parameter.
+
+        Raises:
+            :class:`~jwt.exceptions.InvalidTokenError`: If the ``signed_token``
+                parameter is not a valid token or does not contain the required claims
+                "exp", "iss", "sub", "iat", and "type".
         """
         try:
             header = signed_token.split(".")[0]
@@ -209,7 +211,11 @@ class JWT:
                 "verify_signature": False,
             },
         )
-        token_type = TokenType[claims["type"].upper()]
-        jwt_token = cls(token_type, **claims)
+        token_type = TokenType[claims.pop("type").upper()]
+        sub = claims.pop("sub")
+        scope = None
+        if "scope" in claims:
+            scope = claims.pop("scope")
+        jwt_token = cls(token_type=token_type, sub=sub, scope=scope, **claims)
         jwt_token.signed = signed_token
         return jwt_token

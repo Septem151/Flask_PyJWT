@@ -1,8 +1,17 @@
 class MissingSignerError(Exception):
-    pass
+    """Raised when the ``signer`` attribute has not
+    been set on an :class:`~flask_pyjwt.manager.AuthManager` object.
+    """
 
 
 class MissingConfigError(Exception):
+    """Raised when a config value is missing from an
+    :class:`~flask_pyjwt.manager.AuthManager` object.
+
+    Args:
+        config_value: The config value that raised this exception.
+    """
+
     def __init__(self, config_value: str) -> None:
         super().__init__(config_value)
         self.config_value = config_value
@@ -12,6 +21,14 @@ class MissingConfigError(Exception):
 
 
 class InvalidConfigError(Exception):
+    """Raised when a config value is of an incorrect type or is a value
+    that is not allowed in an :class:`~flask_pyjwt.manager.AuthManager` object.
+
+    Args:
+        config_value: The config value that raised this exception.
+        message: A message describing what the valid config values are.
+    """
+
     def __init__(self, config_value: str, message: str) -> None:
         super().__init__(config_value, message)
         self.config_value = config_value

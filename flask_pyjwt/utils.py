@@ -16,6 +16,16 @@ AUTH_HEADER_RE = re.compile(r"^Bearer {1}\S*$", re.IGNORECASE)
 
 
 def is_valid_auth_header(auth_header: str) -> bool:
+    """Checks if an ``Authorization`` header follows
+    the format "Bearer [token]" (not case sensitive).
+
+    Args:
+        auth_header: The ``Authorization`` header value.
+
+    Returns:
+        bool: True if the ``Authorization`` header is formatted correctly,
+            otherwise False.
+    """
     return bool(AUTH_HEADER_RE.match(auth_header))
 
 
@@ -24,7 +34,41 @@ def require_token(
     location: t.Literal["header", "cookies"] = "header",
     cookie_name: t.Optional[str] = None,
     scope: t.Optional[t.Union[str, int, ClaimsDict]] = None,
+    **kwargs,
 ):
+    """Decorator function for requiring an auth or refresh token in either the
+    header or cookies of a request.
+
+    Optionally, required claims in the ``scope`` can be checked for authorization.
+    Additional ``kwargs`` can be supplied for checking the presence of other claims.
+
+    Args:
+        token_type: Type of token to require ("auth" or "refresh"). Defaults to "auth".
+        location: Location of the token in the request ("header" or "cookies").
+            Defaults to "header".
+        cookie_name: Name of the auth/refresh token cookie. Required if the ``location``
+            is set to "cookies". Defaults to None.
+        scope: Optional claims to check in the token's ``scope`` for authorization.
+            Defaults to None.
+
+    Raises:
+        :class:`ValueError`: If ``token_type`` or ``location`` is not a valid value.
+        :class:`AttributeError`: If ``cookie_name`` is not present when
+            ``location == "cookies"``
+
+    Usage::
+
+        >>> @app.route("/user/<str:user_id>", methods=["POST"])
+        >>> @require_token("auth", "cookies", cookie_name="auth_token", sub=user_id)
+        >>> def post_user(user_id: str):
+        >>>     # If a cookie called "auth_token" in the request
+        >>>     # does not have a valid auth token, aborts with 401 Unauthorized.
+        >>>     # If the token doesn't have a "sub" claim of user_id,
+        >>>     # abort with 403 Forbidden.
+        >>>     # ... some code to modify the user with id of user_id ...
+        >>>     return ...
+
+    """
     if token_type not in ("auth", "refresh"):
         raise ValueError("Invalid token type")
     if location not in ("header", "cookies"):
@@ -32,6 +76,7 @@ def require_token(
     if location == "cookies":
         if not cookie_name:
             raise AttributeError('cookie_name must be set when location is "cookies"')
+    required_claims = kwargs
 
     def decorator(func):
         @wraps(func)
@@ -39,21 +84,28 @@ def require_token(
             if location == "header":
                 auth_header = request.headers.get("Authorization")
                 if not auth_header or not is_valid_auth_header(auth_header):
-                    abort(HTTPStatus.UNAUTHORIZED)
+                    abort(
+                        HTTPStatus.UNAUTHORIZED,
+                        "Improperly formatted or missing Authorization header",
+                    )
                 jwt_token = auth_header[7:]
             else:
                 jwt_token = request.cookies.get(cookie_name)
                 if not jwt_token:
-                    abort(HTTPStatus.UNAUTHORIZED)
+                    abort(HTTPStatus.UNAUTHORIZED, f"Missing {token_type} cookie")
             auth_manager: AuthManager = current_app.auth_manager
             is_valid_token = auth_manager.verify_token(jwt_token)
             if not is_valid_token:
-                abort(HTTPStatus.UNAUTHORIZED)
+                abort(HTTPStatus.UNAUTHORIZED, f"{token_type} token is not valid")
             jwt = auth_manager.convert_token(jwt_token)
             if jwt.token_type != TokenType[token_type.upper()]:
-                abort(HTTPStatus.UNAUTHORIZED)
+                abort(
+                    HTTPStatus.UNAUTHORIZED, f"Invalid token type of {jwt.token_type}"
+                )
+            if required_claims and not _check_scope(required_claims, jwt.claims):
+                abort(HTTPStatus.FORBIDDEN, "Missing required claim(s)")
             if scope and not _check_scope(scope, jwt.claims.get("scope")):
-                abort(HTTPStatus.FORBIDDEN)
+                abort(HTTPStatus.FORBIDDEN, "Missing required scope(s)")
             _add_jwt_to_request_ctx(jwt)
             return func(*args, **kwargs)
 

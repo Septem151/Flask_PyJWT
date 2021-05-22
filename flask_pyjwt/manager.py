@@ -10,6 +10,15 @@ from .typing import AuthType, ClaimsDict, TokenType
 
 
 def _requires_signer(func):
+    """Decorator for requiring the ``signer`` attribute to be set on a given
+    :class:`AuthManager` object.
+
+    Raises:
+        :class:`~flask_pyjwt.errors.MissingSignerError`: If the :class:`AuthManager`
+            attempts to perform a signing or verifying operation without a ``signer``
+            present.
+    """
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         auth_manager: "AuthManager" = args[0]
@@ -23,29 +32,14 @@ def _requires_signer(func):
 
 
 class AuthManager:
-    """[summary]
+    """The main object used for interfacing with Flask_PyJWT.
 
-    Raises:
-        :class:`MissingSignerError`: If the :class:`AuthManager` attempts
-            to perform a signing or verifying operation without a ``signer``
-            present.
-    """
+    Includes methods for creating auth and refresh tokens, and verifying tokens.
+    Can be initialized using the application factory pattern by calling the
+    :meth:`init_app` method on an existing :class:`AuthManager` object, or by
+    passing the Flask app directly into the constructor.
 
-    default_auth_max_age = 3600
-    default_refresh_max_age = 604800
-
-    def __init__(
-        self, app: t.Optional[Flask] = None, signer: t.Optional[AuthData] = None
-    ) -> None:
-        self.signer = signer
-        if app is not None:
-            self.app = app
-            self.init_app(app)
-
-    def init_app(self, app: Flask) -> None:
-        """Initializes the ``signer`` values to config values set in a flask app.
-
-        Required config values are:
+    Required config values are:
         * ``JWT_ISSUER`` (:obj:`str`): The issuer of JWTs created by this
             auth manager.
         * ``JWT_AUTHTYPE`` (:obj:`str`): The type of auth to use (ex: ``HS256``)
@@ -53,20 +47,62 @@ class AuthManager:
         * ``JWT_SECRET`` (:obj:`str` or :obj:`bytes`): The secret key used for
             signing JWTs created by this auth manager.
 
-        Optional config values include:
-        * ``JWT_AUTHMAXAGE`` (:obj:`int`): How long auth JWTs created by this
-            auth manager are valid for.
-        * ``JWT_REFRESHMAXAGE`` (:obj:`int`): How long refresh JWTs created
-            by this auth manager are valid for.
+    Optional config values include:
+    * ``JWT_AUTHMAXAGE`` (:obj:`int`): How long auth JWTs created by this
+        auth manager are valid for.
+    * ``JWT_REFRESHMAXAGE`` (:obj:`int`): How long refresh JWTs created
+        by this auth manager are valid for.
+
+    Initializing::
+
+        >>> app = Flask(__name__)
+        >>> auth_manager = AuthManager(app)
+        >>> # or alternatively:
+        >>> auth_manager = AuthManager()
+        >>> auth_manager.init_app(app)
+
+    Example Usage::
+
+        >>> @app.route("/token/<str:user_id>", methods=["POST"])
+        >>> def index(user_id: str):
+        >>>     auth_token = auth_manager.auth_token(
+        >>>         subject=user_id,
+        >>>         scope={"admin": True},
+        >>>         custom_claim="Flask_PyJWT"
+        >>>     )
+        >>>     return {"auth_token": auth_token.signed}
+
+    Args:
+        app (:class:`~flask.Flask`): A flask application to retrieve config values from.
+
+    Raises:
+        :class:`~flask_pyjwt.errors.MissingConfigError`: If a required config
+            key is missing from the flask app.
+        :class:`~flask_pyjwt.errors.InvalidConfigError`: If a config key's value
+            is of the wrong type or an unacceptable value.
+    """
+
+    default_auth_max_age = 3600
+    default_refresh_max_age = 604800
+
+    def __init__(self, app: t.Optional[Flask] = None) -> None:
+        if app is not None:
+            self.app = app
+            self.init_app(app)
+
+    def init_app(self, app: Flask) -> None:
+        """Initializes this :class:`AuthManager` with the config values in ``app``,
+        and attaches itself to the flask app.
 
         Args:
-            app: A flask application to retrieve config values from.
+            app (:class:`~flask.Flask`): A flask application to retrieve config
+                values from.
 
         Raises:
-            :class:`MissingConfigError`: If a required config key is missing
-                from the flask app.
-            :class:`InvalidConfigError`: If a config key's value is of the
-                wrong type or an unacceptable value.
+            :class:`~flask_pyjwt.errors.MissingConfigError`: If a required config
+                key is missing from the flask app.
+            :class:`~flask_pyjwt.errors.InvalidConfigError`: If a config key's value
+                is of the wrong type or an unacceptable value.
         """
         req_configs = ("JWT_ISSUER", "JWT_AUTHTYPE", "JWT_SECRET")
         for config_value in req_configs:
@@ -104,6 +140,22 @@ class AuthManager:
         scope: t.Optional[t.Union[str, ClaimsDict]] = None,
         **kwargs: t.Optional[t.Union[str, int, ClaimsDict]],
     ) -> JWT:
+        """Generates a new :class:`~flask_pyjwt.jwt.JWT` with the claims provided.
+
+        Args:
+            subject: Value for the ``sub`` claim.
+            scope: Optional ``scope`` claim for authorizations. Defaults to None.
+
+        Returns:
+            :class:`~flask_pyjwt.jwt.JWT`: Token with a ``type`` claim of "auth".
+
+        Example::
+
+            >>> auth_token = auth_manager.auth_token(subject="Flask_PyJWT")
+            >>> auth_token.is_signed()
+            True
+
+        """
         auth_token = JWT(TokenType.AUTH, subject, scope, **kwargs)
         assert self.signer is not None
         auth_token.sign(self.signer)
@@ -114,6 +166,21 @@ class AuthManager:
         self,
         subject: t.Union[str, int],
     ) -> JWT:
+        """Generates a new :class:`~flask_pyjwt.jwt.JWT` with the claims provided.
+
+        Args:
+            subject: Value for the ``sub`` claim.
+
+        Returns:
+            :class:`~flask_pyjwt.jwt.JWT`: Token with a ``type`` claim of "refresh".
+
+        Example::
+
+            >>> refresh_token = auth_manager.refresh_token(subject="Flask_PyJWT")
+            >>> refresh_token.is_signed()
+            True
+
+        """
         if self.signer is None:
             raise MissingSignerError()
         refresh_token = JWT(TokenType.REFRESH, subject, None)
@@ -122,6 +189,27 @@ class AuthManager:
 
     @_requires_signer
     def verify_token(self, token: t.Union[JWT, str]) -> bool:
+        """Verifies that a :class:`~flask_pyjwt.jwt.JWT` or encoded JWT has been signed
+        by this :class:`AuthManager` and is not in an invalid format or encoding.
+
+        Args:
+            token: The JWT to verify.
+
+        Returns:
+            bool: True if the JWT has a valid signature, has required claims, and
+                has the required claims of ``iat``, ``exp``, and ``iss``, otherwise
+                False.
+
+        Note:
+            This function does **NOT** verify additional custom claims nor scope.
+
+        Example::
+
+            >>> auth_token = auth_manager.auth_token(subject="Flask_PyJWT")
+            >>> verify_token(auth_token)
+            True
+
+        """
         try:
             if not isinstance(token, JWT):
                 token = self.convert_token(token)
@@ -148,4 +236,25 @@ class AuthManager:
 
     @staticmethod
     def convert_token(signed_token: str) -> JWT:
+        """Converts a signed encoded JWT into a :class:`~flask_pyjwt.jwt.JWT` object.
+
+        Args:
+            signed_token: A properly encoded JWT.
+
+        Returns:
+            JWT: The signed and encoded JWT as a :class:`~flask_pyjwt.jwt.JWT` object.
+
+        Raises:
+            ``InvalidTokenError``: If the ``signed_token`` parameter is not
+                a valid token or does not contain the required claims
+                "exp", "iss", "sub", "iat", and "type".
+
+        Example::
+
+            >>> signed_encoded_token = "eyJhbG..._adQssw5c"
+            >>> jwt = convert_token(signed_encoded_token)
+            >>> print(jwt.signed)
+            'eyJhbG..._adQssw5c'
+
+        """
         return JWT.from_signed_token(signed_token)
