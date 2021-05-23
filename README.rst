@@ -5,7 +5,10 @@ Flast_PyJWT is a flask extension for adding authentication and authorization via
 JWT tokens. Routes can be decorated to require JWT auth or refresh tokens, and can
 require the presence of additional claims and their values.
 
-Example::
+Example
+-------
+
+.. codeblock::
 
     from Flask import flask, request
     from Flask_PyJWT import auth_manager, current_token, require_token

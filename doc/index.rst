@@ -14,7 +14,10 @@ require the presence of additional claims and their values.
    configuration
    api
 
-Example::
+Example
+-------
+
+.. codeblock::
 
     from Flask import flask, request
     from Flask_PyJWT import auth_manager, current_token, require_token
