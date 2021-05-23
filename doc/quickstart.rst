@@ -1,6 +1,13 @@
 Quickstart
 ==========
 
+To quickly get up and running with Flask_PyJWT, follow the steps in :ref:`Initial Setup`.
+
+For common use cases, see the sections for :ref:`Creating JWTs`, :ref:`Requiring JWTs`, 
+:ref:`Route Variable Rules`, :ref:`Requiring Authorization`, and :ref:`Using the Current Token`.
+
+.. _Initial Setup:
+
 Initial Setup
 -------------
 
@@ -46,6 +53,8 @@ Next, we'll add the :class:`~flask_pyjwt.manager.AuthManager` to handle JWTs::
     app = Flask(__name__)
     auth_manager = AuthManager(app)
 
+.. _Creating JWTs:
+
 Creating JWTs
 -------------
 
@@ -78,6 +87,8 @@ The :class:`~flask_pyjwt.manager.AuthManager` is all we need to create new JWTs:
 
 The client can then store the auth and refresh token accordingly.
 
+.. _Requiring JWTs:
+
 Requiring JWTs
 --------------
 
@@ -97,6 +108,8 @@ of JWTs in a request. For this example, we'll be expecting an auth token in the
     @require_token()
     def protected_route():
         return {"message": "You've reached the protected route!"}
+
+.. _Route Variable Rules:
 
 Route Variable Rules
 --------------------
@@ -126,6 +139,8 @@ Flask_PyJWT know to use the ``username`` value passed in from the URL.
    you would write ``@require_token(test="test value")``. If the "test" claim is not present,
    a 403 Forbidden response is returned.
 
+.. _Requiring Authorization:
+
 Requiring Authorization
 -----------------------
 
@@ -146,6 +161,8 @@ put authorizations in the ``scope`` claim::
     @require_token(scope={"admin": True})
     def admin_dashboard():
         return {"message": f"Hello admin!"}
+
+.. _Using the Current Token:
 
 Using the Current Token
 -----------------------

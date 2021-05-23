@@ -69,6 +69,14 @@ JWT_REFRESHMAXAGE
 -----------------
 (``int``): The maximum time, in seconds, that a refresh JWT is considered valid.
 
+#############
+Documentation
+#############
+
+Documentation is hosted by `Read the Docs <https://readthedocs.org/>`_.
+
+You can find documentation for Flask_PyJWT at `<https://flask-pyjwt.readthedocs.io/>`_
+
 *************
 Example Usage
 *************

@@ -1,7 +1,8 @@
 Installation
 =============
 
-Flask_PyJWT can be installed with ``pip``:
+Flask_PyJWT is availabe on `PyPi <https://pypi.org/project/flask-pyjwt/>`_ 
+and can be installed with ``pip``:
 
 .. code-block:: console
 
