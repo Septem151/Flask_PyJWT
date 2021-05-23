@@ -25,6 +25,17 @@ Here's an example ``.env`` file:
     # JWT_AUTHMAXAGE=3600
     # JWT_REFRESHMAXAGE=604800
 
+Alternatively, you can set these configuration variables in code::
+
+    app.config["JWT_ISSUER"] = "Flask_PyJWT"
+    app.config["JWT_AUTHTYPE"] = "HS256"
+    app.config["JWT_SECRET"] = "SuperSecretKey"
+    # Optional:
+    # app.config["JWT_AUTHMAXAGE"] = 3600
+    # app.config["JWT_REFRESH_MAXAGE"] = 604800
+
+For a detailed description of valid configurations, see the :doc:`configuration` section.
+
 Next, we'll add the :class:`~flask_pyjwt.manager.AuthManager` to handle JWTs::
 
     # file: app.py
