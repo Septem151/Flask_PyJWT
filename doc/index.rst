@@ -17,7 +17,7 @@ require the presence of additional claims and their values.
 Example
 -------
 
-.. codeblock::
+.. code-block:: python
 
     from Flask import flask, request
     from Flask_PyJWT import auth_manager, current_token, require_token
