@@ -65,8 +65,8 @@ JWT_AUTHMAXAGE
 
 (``int``): The maximum time, in seconds, that an auth JWT is considered valid.
 
-JWT_REFRESH_MAXAGE
-------------------
+JWT_REFRESHMAXAGE
+-----------------
 (``int``): The maximum time, in seconds, that a refresh JWT is considered valid.
 
 *************
