@@ -1,12 +1,77 @@
-Welcome to Flask_PyJWT's documentation!
-=======================================
+###########
+Flask_PyJWT
+###########
 
 Flast_PyJWT is a flask extension for adding authentication and authorization via
 JWT tokens. Routes can be decorated to require JWT auth or refresh tokens, and can
 require the presence of additional claims and their values.
 
-Example
--------
+************
+Installation
+************
+
+Flask_PyJWT can be installed with ``pip``:
+
+.. code-block:: console
+
+    pip install Flask_PyJWT
+
+A python version of 3.8 or higher is officially supported. Other versions of Python 3.x
+may work, but have not been tested.
+
+Currently, only Flask 1.1.x is officially supported. Flask 2.x *may* work, but has not
+been tested.
+
+*************
+Configuration
+*************
+
+Flask_PyJWT's configuration variables are read from the Flask app's config and start
+with the prefix "JWT\_".
+
+Required Values
+===============
+
+JWT_ISSUER
+----------
+
+(``str``): The issuer of JWTs. Usually your website/API's name.
+
+JWT_AUTHTYPE
+------------
+
+(``str``): The type of auth to use for your JWTs (HMACSHA256, HMACSHA512, RSA256, RSA512).
+
+Accepted Values:
+
+* HS256
+* HS512
+* RS256
+* RS512
+
+JWT_SECRET
+----------
+
+(``str`` | ``bytes``): The secret key or RSA private key to sign JWTs with.
+
+If the ``JWT_AUTHTYPE`` is HS256 or HS512, a ``str`` is required.
+if the ``JWT_AUTHTYPE`` is RS256 or RS512, a ``bytes`` encoded RSA private key is required.
+
+Optional Values
+===============
+
+JWT_AUTHMAXAGE
+--------------
+
+(``int``): The maximum time, in seconds, that an auth JWT is considered valid.
+
+JWT_REFRESH_MAXAGE
+------------------
+(``int``): The maximum time, in seconds, that a refresh JWT is considered valid.
+
+*************
+Example Usage
+*************
 
 .. code-block:: python
 
