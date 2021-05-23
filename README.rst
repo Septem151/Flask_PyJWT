@@ -69,9 +69,9 @@ JWT_REFRESHMAXAGE
 -----------------
 (``int``): The maximum time, in seconds, that a refresh JWT is considered valid.
 
-#############
+*************
 Documentation
-#############
+*************
 
 Documentation is hosted by `Read the Docs <https://readthedocs.org/>`_.
 
