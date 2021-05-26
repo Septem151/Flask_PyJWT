@@ -23,6 +23,14 @@ Currently, only Flask 1.1.x is officially supported. Flask 2.x *may* work, but h
 been tested.
 
 *************
+Documentation
+*************
+
+Documentation is hosted by `Read the Docs <https://readthedocs.org/>`_.
+
+You can find documentation for Flask_PyJWT at `<https://flask-pyjwt.readthedocs.io/>`_
+
+*************
 Configuration
 *************
 
@@ -68,14 +76,6 @@ JWT_AUTHMAXAGE
 JWT_REFRESHMAXAGE
 -----------------
 (``int``): The maximum time, in seconds, that a refresh JWT is considered valid.
-
-*************
-Documentation
-*************
-
-Documentation is hosted by `Read the Docs <https://readthedocs.org/>`_.
-
-You can find documentation for Flask_PyJWT at `<https://flask-pyjwt.readthedocs.io/>`_
 
 *************
 Example Usage

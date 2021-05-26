@@ -1,7 +1,13 @@
-from .exceptions import InvalidConfigError, MissingConfigError, MissingSignerError
-from .jwt import JWT, AuthData
-from .manager import AuthManager
-from .typing import AuthType, TokenType
-from .utils import current_token, require_token
+# pylint: disable=useless-import-alias
+from .exceptions import InvalidConfigError as InvalidConfigError
+from .exceptions import MissingConfigError as MissingConfigError
+from .exceptions import MissingSignerError as MissingSignerError
+from .jwt import JWT as JWT
+from .jwt import AuthData as AuthData
+from .manager import AuthManager as AuthManager
+from .typing import AuthType as AuthType
+from .typing import TokenType as TokenType
+from .utils import current_token as current_token
+from .utils import require_token as require_token
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"

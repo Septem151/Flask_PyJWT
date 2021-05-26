@@ -42,18 +42,18 @@ class AuthManager:
     Required config values are:
 
         * ``JWT_ISSUER`` (:obj:`str`): The issuer of JWTs created by this
-            auth manager.
+        auth manager.
         * ``JWT_AUTHTYPE`` (:obj:`str`): The type of auth to use (ex: ``HS256``)
-            for keys created by this auth manager.
+        for keys created by this auth manager.
         * ``JWT_SECRET`` (:obj:`str` or :obj:`bytes`): The secret key used for
-            signing JWTs created by this auth manager.
+        signing JWTs created by this auth manager.
 
     Optional config values include:
 
         * ``JWT_AUTHMAXAGE`` (:obj:`int`): How long auth JWTs created by this
-            auth manager are valid for.
+        auth manager are valid for.
         * ``JWT_REFRESHMAXAGE`` (:obj:`int`): How long refresh JWTs created
-            by this auth manager are valid for.
+        by this auth manager are valid for.
 
     Initializing::
 
