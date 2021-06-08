@@ -3,7 +3,7 @@ from enum import Enum, unique
 
 
 class AuthTypeMixin(t.NamedTuple):
-    """Mixin class for the :class:`AuthType` enum.
+    """Mixin class for the :class:`~flask_pyjwt.typing.AuthType` enum.
 
     Contains valid type definitions for a secret key used in signing a JWT.
 

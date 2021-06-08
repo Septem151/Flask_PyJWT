@@ -178,18 +178,21 @@ def _add_jwt_to_request_ctx(jwt_token: JWT) -> None:
     """Adds a :class:`~flask_pyjwt.jwt.JWT` object to the current request's context.
 
     Args:
-        jwt_token (:class:`JWT`): Token to add to the request's context.
+        jwt_token (:class:`~flask_pyjwt.jwt.JWT`): Token to add to the request's
+            context.
     """
     ctx = _request_ctx_stack.top
     ctx.jwt_token = jwt_token
 
 
 def _get_jwt() -> t.Optional[JWT]:
-    """Returns the :class:`~JWT` object from the current request's context.
+    """Returns the :class:`~flask_pyjwt.jwt.JWT` object from the current request's
+    context.
 
     Returns:
-        The :class:`JWT` object from the request's context, or ``None`` if there is
-        no request context or the request context has no ``jwt_token`` attribute.
+        The :class:`~flask_pyjwt.jwt.JWT` object from the request's context,
+        or ``None`` if there is no request context or the request context has no
+        ``jwt_token`` attribute.
     """
     if has_request_context() and hasattr(_request_ctx_stack.top, "jwt_token"):
         jwt_token: JWT = getattr(_request_ctx_stack.top, "jwt_token")

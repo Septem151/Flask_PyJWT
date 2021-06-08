@@ -11,12 +11,12 @@ from .typing import AuthType, TokenType
 
 def _requires_signer(func):
     """Decorator for requiring the ``signer`` attribute to be set on a given
-    :class:`AuthManager` object.
+    :class:`~flask_pyjwt.manager.AuthManager` object.
 
     Raises:
-        :class:`~flask_pyjwt.errors.MissingSignerError`: If the :class:`AuthManager`
-            attempts to perform a signing or verifying operation without a ``signer``
-            present.
+        :class:`~flask_pyjwt.exceptions.MissingSignerError`: If the
+            :class:`~flask_pyjwt.exceptions.AuthManager` attempts to perform a signing
+            or verifying operation without a ``signer`` present.
     """
 
     @wraps(func)
@@ -36,8 +36,8 @@ class AuthManager:
 
     Includes methods for creating auth and refresh tokens, and verifying tokens.
     Can be initialized using the application factory pattern by calling the
-    :meth:`init_app` method on an existing :class:`AuthManager` object, or by
-    passing the Flask app directly into the constructor.
+    :meth:`init_app` method on an existing :class:`~flask_pyjwt.manager.AuthManager`
+    object, or by passing the Flask app directly into the constructor.
 
     Required config values are:
 
@@ -77,9 +77,9 @@ class AuthManager:
         app (:class:`~flask.Flask`): A flask application to retrieve config values from.
 
     Raises:
-        :class:`~flask_pyjwt.errors.MissingConfigError`: If a required config
+        :class:`~flask_pyjwt.exceptions.MissingConfigError`: If a required config
             key is missing from the flask app.
-        :class:`~flask_pyjwt.errors.InvalidConfigError`: If a config key's value
+        :class:`~flask_pyjwt.exceptions.InvalidConfigError`: If a config key's value
             is of the wrong type or an unacceptable value.
     """
 
@@ -97,17 +97,17 @@ class AuthManager:
             self.init_app(app)
 
     def init_app(self, app: Flask) -> None:
-        """Initializes an :class:`AuthManager` with the config values in ``app``,
-        and attaches itself to the flask app.
+        """Initializes an :class:`~flask_pyjwt.manager.AuthManager` with the config
+        values in ``app``, and attaches itself to the flask app.
 
         Args:
-            app: A flask application to retrieve config
+            app (:class:`~flask.Flask`): A flask application to retrieve config
                 values from.
 
         Raises:
-            :class:`~flask_pyjwt.errors.MissingConfigError`: If a required config
+            :class:`~flask_pyjwt.exceptions.MissingConfigError`: If a required config
                 key is missing from the flask app.
-            :class:`~flask_pyjwt.errors.InvalidConfigError`: If a config key's value
+            :class:`~flask_pyjwt.exceptions.InvalidConfigError`: If a config key's value
                 is of the wrong type or an unacceptable value.
         """
         req_configs = ("JWT_ISSUER", "JWT_AUTHTYPE", "JWT_SECRET")
@@ -195,7 +195,8 @@ class AuthManager:
     @_requires_signer
     def verify_token(self, token: t.Union[JWT, str]) -> bool:
         """Verifies that a :class:`~flask_pyjwt.jwt.JWT` or encoded JWT has been signed
-        by this :class:`AuthManager` and is not in an invalid format or encoding.
+        by this :class:`~flask_pyjwt.manager.AuthManager` and is not in an invalid
+        format or encoding.
 
         Args:
             token (:class:`~flask_pyjwt.jwt.JWT` | :obj:`str`): The JWT to verify.
