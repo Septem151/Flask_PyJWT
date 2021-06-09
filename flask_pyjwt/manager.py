@@ -1,7 +1,9 @@
+import os
 import typing as t
 from functools import wraps
 
 import jwt as PyJWT
+from dotenv import load_dotenv
 from flask import Flask
 
 from .exceptions import InvalidConfigError, MissingConfigError, MissingSignerError
@@ -91,7 +93,10 @@ class AuthManager:
     """:obj:`int`: The default max age for a ``refresh`` token.
     """
 
-    def __init__(self, app: t.Optional[Flask] = None) -> None:
+    def __init__(
+        self, app: t.Optional[Flask] = None, dotenv_path: t.Optional[str] = None
+    ) -> None:
+        load_dotenv(dotenv_path)
         if app is not None:
             self.app = app
             self.init_app(app)
@@ -110,33 +115,57 @@ class AuthManager:
             :class:`~flask_pyjwt.exceptions.InvalidConfigError`: If a config key's value
                 is of the wrong type or an unacceptable value.
         """
+        cast_required = False
         req_configs = ("JWT_ISSUER", "JWT_AUTHTYPE", "JWT_SECRET")
         for config_value in req_configs:
             if not app.config.get(config_value):
-                raise MissingConfigError(config_value)
+                if config_value == "JWT_SECRET":
+                    cast_required = True
+                app.config[config_value] = os.environ.get(config_value)
+                if not app.config.get(config_value):
+                    raise MissingConfigError(config_value)
         try:
             auth_type = AuthType[app.config["JWT_AUTHTYPE"]]
         except KeyError as error:
             raise InvalidConfigError("JWT_AUTHTYPE", "Invalid auth type") from error
-        secret = app.config["JWT_SECRET"]
+        secret = (
+            app.config["JWT_SECRET"]
+            if not cast_required and not auth_type in (AuthType.RS256, AuthType.RS512)
+            else app.config["JWT_SECRET"].encode("utf-8")
+        )
         if not isinstance(secret, auth_type.secret_type):
             raise InvalidConfigError("JWT_SECRET", "Secret is of the wrong type")
+        public_key = None
+        if auth_type in (AuthType.RS256, AuthType.RS512):
+            public_key = app.config.get(
+                "JWT_PUBLICKEY", os.environ.get("JWT_PUBLICKEY")
+            )
+            if not public_key:
+                raise MissingConfigError("JWT_PUBLICKEY")
+            if not isinstance(public_key, bytes):
+                public_key = public_key.encode("utf-8")
         issuer = app.config["JWT_ISSUER"]
         if not isinstance(issuer, str):
             raise InvalidConfigError("JWT_ISSUER", "Issuer must be a str")
         auth_max_age = app.config.get(
-            "JWT_AUTHMAXAGE", AuthManager.default_auth_max_age
+            "JWT_AUTHMAXAGE",
+            int(os.environ.get("JWT_AUTHMAXAGE", AuthManager.default_auth_max_age)),
         )
         if not isinstance(auth_max_age, int):
             raise InvalidConfigError("JWT_AUTHMAXAGE", "Auth Max Age must be an int")
         refresh_max_age = app.config.get(
-            "JWT_REFRESHMAXAGE", AuthManager.default_refresh_max_age
+            "JWT_REFRESHMAXAGE",
+            int(
+                os.environ.get("JWT_REFRESHMAXAGE", AuthManager.default_refresh_max_age)
+            ),
         )
         if not isinstance(refresh_max_age, int):
             raise InvalidConfigError(
                 "JWT_REFRESHMAXAGE", "Refresh Max Age must be an int"
             )
-        self.signer = AuthData(auth_type, secret, issuer, auth_max_age, refresh_max_age)
+        self.signer = AuthData(
+            auth_type, secret, issuer, auth_max_age, refresh_max_age, public_key
+        )
         app.auth_manager = self
 
     @_requires_signer
@@ -223,9 +252,14 @@ class AuthManager:
                 return False
             assert token.signed is not None
             assert self.signer is not None
+            verifier = (
+                self.signer.secret
+                if not self.signer.public_key
+                else self.signer.public_key
+            )
             PyJWT.decode(
                 token.signed,
-                self.signer.secret,  # type: ignore
+                verifier,  # type: ignore
                 issuer=self.signer.issuer,
                 algorithms=[self.signer.algorithm()],
                 options={

@@ -27,6 +27,8 @@ class AuthData:
             :class:`~flask_pyjwt.typing.TokenType` of ``AUTH``.
         refresh_max_age (:obj:`int`): The max age for a JWT with
             :class:`~flask_pyjwt.typing.TokenType` of ``REFRESH``.
+        public_key (:obj:`bytes` | ``None``): The public key used to verify signed JWTs
+            if the :class:`~flask_pyjwt.typing.AuthType` is ``RS256`` or ``RS512``.
 
     Attributes:
         auth_type (:class:`~flask_pyjwt.typing.AuthType`): The
@@ -39,6 +41,9 @@ class AuthData:
             :class:`~flask_pyjwt.typing.TokenType` of ``AUTH``.
         refresh_max_age (:obj:`int`): The max age for a JWT with
             :class:`~flask_pyjwt.typing.TokenType` of ``REFRESH``.
+        public_key (:obj:`bytes` | ``None``): The public key used to verify signed JWTs
+            if the :class:`~flask_pyjwt.typing.AuthType` is ``RS256`` or ``RS512``.
+            Otherwise, ``None``.
 
     Example::
 
@@ -51,6 +56,7 @@ class AuthData:
             specified in the ``auth_type`` parameter's secret type.
     """
 
+    # pylint: disable=too-many-arguments
     def __init__(
         self,
         auth_type: AuthType,
@@ -58,6 +64,7 @@ class AuthData:
         issuer: str,
         auth_max_age: int,
         refresh_max_age: int,
+        public_key: t.Optional[bytes] = None,
     ) -> None:
         if not isinstance(secret, auth_type.secret_type):
             raise TypeError(
@@ -68,6 +75,7 @@ class AuthData:
         self.issuer = issuer
         self.auth_max_age = auth_max_age
         self.refresh_max_age = refresh_max_age
+        self.public_key = public_key
 
     def algorithm(self) -> str:
         """Returns the algorithm type used.
@@ -123,6 +131,7 @@ class JWT:
         claims (:obj:`dict`): The claims of the JWT.
             Includes ``sub`` and ``type`` by default.
         signed (:obj:`str`): The signed, encoded JWT. Defaults to ``None``.
+        typ (:obj:`str`): Type of token, which is always "JWT" in the token's header.
 
     Example::
 
@@ -149,6 +158,27 @@ class JWT:
         for key, value in kwargs.items():
             self.claims[key] = value
         self.signed: t.Optional[str] = None
+        self._alg: t.Optional[str] = None
+        self.typ = "JWT"
+
+    @property
+    def alg(self) -> t.Optional[str]:
+        """The algorithm property of the JWT, present in the token's header.
+
+        Returns:
+            :obj:`str` | ``None``: Name of the algorithm used to sign this JWT,
+            or ``None`` if the JWT has not been signed.
+        """
+        return self._alg
+
+    @property
+    def header(self) -> dict:
+        """The header of the JWT.
+
+        Returns:
+            dict: Header containing "typ" and "alg".
+        """
+        return {"typ": self.typ, "alg": self._alg}
 
     @property
     def scope(self) -> t.Optional[t.Union[str, int, dict]]:
@@ -236,6 +266,7 @@ class JWT:
         self.signed = pyjwt_encode(
             self.claims, auth_data.secret, auth_data.algorithm()  # type: ignore
         )
+        self._alg = auth_data.algorithm()
         return self.signed
 
     def is_signed(self) -> bool:
@@ -290,4 +321,5 @@ class JWT:
             scope = claims.pop("scope")
         jwt_token = cls(token_type=token_type, sub=sub, scope=scope, **claims)
         jwt_token.signed = signed_token
+        jwt_token._alg = header_dict["alg"]
         return jwt_token

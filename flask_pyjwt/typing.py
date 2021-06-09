@@ -8,10 +8,12 @@ class AuthTypeMixin(t.NamedTuple):
     Contains valid type definitions for a secret key used in signing a JWT.
 
     Args:
+        algorithm (:obj:`str`): Name of the auth algorithm.
         secret_type (:obj:`type`): Type of secret key that needs to be used,
             whether it's a ``bytes`` key or ``str``.
     """
 
+    algorithm: str
     secret_type: t.Union[t.Type[str], t.Type[bytes]]
 
 
@@ -29,10 +31,10 @@ class AuthType(AuthTypeMixin, Enum):
         name (:obj:`str`): Name of the enum value, this is placed inside of the JWT.
     """
 
-    RS256 = AuthTypeMixin(bytes)
-    RS512 = AuthTypeMixin(bytes)
-    HS256 = AuthTypeMixin(str)
-    HS512 = AuthTypeMixin(str)
+    RS256 = AuthTypeMixin("RS256", bytes)
+    RS512 = AuthTypeMixin("RS512", bytes)
+    HS256 = AuthTypeMixin("HS256", str)
+    HS512 = AuthTypeMixin("HS512", str)
 
 
 @unique
