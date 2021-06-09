@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "flask_pyjwt"
-version = "0.1.5"
+version = "0.1.6"
 description = "Flask extension for creating, verifying, and requiring the presence of JWTs"
 license = "MIT"
 authors = ["Carson Mullins <septem151@protonmail.com>"]
