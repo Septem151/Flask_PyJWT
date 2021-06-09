@@ -46,7 +46,7 @@ class AuthManager:
         * ``JWT_ISSUER`` (:obj:`str`): The issuer of JWTs created by this auth manager.
         * ``JWT_AUTHTYPE`` (:obj:`str`): The type of auth to use (ex: ``HS256``)
             for keys created by this auth manager.
-        * ``JWT_SECRET`` (:obj:`str` or :obj:`bytes`): The secret key used for
+        * ``JWT_SECRET`` (:obj:`str` | :obj:`bytes`): The secret key used for
             signing JWTs created by this auth manager.
 
     Optional config values include:
@@ -55,6 +55,9 @@ class AuthManager:
             auth manager are valid for.
         * ``JWT_REFRESHMAXAGE`` (:obj:`int`): How long refresh JWTs created
             by this auth manager are valid for.
+        * ``JWT_PUBLICKEY`` (:obj:`str` | :obj:`bytes`): The public key used for
+            verifying signed JWTs created by this auth manager if the RSA algorithm
+            is used.
 
     Initializing::
 
@@ -77,6 +80,8 @@ class AuthManager:
 
     Args:
         app (:class:`~flask.Flask`): A flask application to retrieve config values from.
+        dotenv_path (:obj:`str` | ``None``): The absolute or relative path to a .env
+            file to load configuration variables from.
 
     Raises:
         :class:`~flask_pyjwt.exceptions.MissingConfigError`: If a required config
@@ -129,9 +134,9 @@ class AuthManager:
         except KeyError as error:
             raise InvalidConfigError("JWT_AUTHTYPE", "Invalid auth type") from error
         secret = (
-            app.config["JWT_SECRET"]
-            if not cast_required and not auth_type in (AuthType.RS256, AuthType.RS512)
-            else app.config["JWT_SECRET"].encode("utf-8")
+            app.config["JWT_SECRET"].encode("utf-8")
+            if cast_required and auth_type in (AuthType.RS256, AuthType.RS512)
+            else app.config["JWT_SECRET"]
         )
         if not isinstance(secret, auth_type.secret_type):
             raise InvalidConfigError("JWT_SECRET", "Secret is of the wrong type")
