@@ -77,6 +77,13 @@ JWT_REFRESHMAXAGE
 -----------------
 (``int``): The maximum time, in seconds, that a refresh JWT is considered valid.
 
+JWT_PUBLICKEY
+-------------
+
+(``str`` | ``bytes``): The RSA public key used to verify JWTs with, if the ``JWT_AUTHTYPE``
+is set to RS256 or RS512.
+
+
 *************
 Example Usage
 *************
