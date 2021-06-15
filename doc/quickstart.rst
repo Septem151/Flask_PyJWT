@@ -4,7 +4,8 @@ Quickstart
 To quickly get up and running with Flask_PyJWT, follow the steps in :ref:`Initial Setup`.
 
 For common use cases, see the sections for :ref:`Creating JWTs`, :ref:`Requiring JWTs`, 
-:ref:`Route Variable Rules`, :ref:`Requiring Authorization`, and :ref:`Using the Current Token`.
+:ref:`Route Variable Rules`, :ref:`Requiring Authorization`, :ref:`Using the Current Token`,
+and :ref:`Overriding Required Authorization`.
 
 .. _Initial Setup:
 
@@ -191,3 +192,24 @@ If you need access to the current token being used in the request, use the
             "is_signed": current_token.is_signed()
             "signed_token": current_token.signed,
         }
+
+.. _Overriding Required Authorization:
+
+Overriding Required Authorization
+---------------------------------
+
+If you want to add some optional claims that take precedence over required claims,
+you can use the ``override`` parameter of the :class:`~flask_pyjwt.utils.require_token`
+decorator. This is useful for restricting routes to only authorized users, but also
+allowing those with special privileges to be able to access the same restricted routes::
+
+    # file: app.py
+
+    from flask import Flask
+    from flask_pyjwt import AuthManager, current_token, require_token
+
+    @app.route("/overridable_route/<string:username>")
+    @require_token(sub="username", override={"admin": True})
+    def overridable_route():
+        is_admin = current_token.claims.get("admin")
+        return {"message": f"Hello, {'admin' if is_admin else username}!"}, 200

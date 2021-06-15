@@ -34,6 +34,7 @@ def require_token(
     location: t.Literal["header", "cookies"] = "header",
     cookie_name: t.Optional[str] = None,
     scope: t.Optional[t.Union[str, int, dict]] = None,
+    override: t.Optional[dict] = None,
     **kwargs,
 ):
     """Decorator function for requiring an auth or refresh token in either the
@@ -56,7 +57,11 @@ def require_token(
         cookie_name (:obj:`str`): Name of the auth/refresh token cookie.
             Required if the ``location`` is set to "cookies". Defaults to ``None``.
         scope (:obj:`str` | :obj:`int` | :obj:`dict`): Optional claims to check
-            in the token's ``scope`` for authorization. Defaults to None.
+            in the token's ``scope`` for authorization. Defaults to ``None``.
+        override (:obj:`dict`): Optional claims to check for authorization.
+            If ``override`` is set, and the claims in ``override`` are present and
+            valid, the ``scope`` and additional ``**kwargs`` parameter(s) is ignored.
+            Defaults to ``None``.
         **kwargs: Additional claims that must be present on the token for authorization.
 
     Raises:
@@ -73,11 +78,13 @@ def require_token(
             cookie_name="auth_token",
             sub="user_id",
             custom_claim="Flask_PyJWT",
+            override={"admin": True}
         )
         def post_user(user_id: str):
             # If a cookie called "auth_token" in the request
             # does not have a valid auth token, aborts with 401 Unauthorized.
-            # If the token doesn't have a "sub" claim of user_id
+            # If the token's scope contains "admin": True, auth token is valid.
+            # Otherwise if the token doesn't have a "sub" claim of user_id
             # or "custom_claim" of "FlaskPyJWT", abort with 403 Forbidden.
             # ... some code to modify the user with id of user_id ...
             return ...
@@ -116,6 +123,9 @@ def require_token(
                 abort(
                     HTTPStatus.UNAUTHORIZED, f"Invalid token type of {jwt.token_type}"
                 )
+            if override and _check_claims(override, jwt.claims):
+                _add_jwt_to_request_ctx(jwt)
+                return func(*args, **kwargs)
             required_claims = {}
             for key, val in kwargs.items():
                 if key in required_claim_keys.values():

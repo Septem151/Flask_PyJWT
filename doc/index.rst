@@ -98,6 +98,14 @@ Example
             "is_signed": current_token.is_signed()
             "signed_token": current_token.signed,
         }
+    
+    # Require authorization to be present in an auth token's scope or claims, but
+    # with the option to override those values with other claims
+    @app.route("/overridable_route/<string:username>")
+    @require_token(sub="username", override={"admin": True})
+    def overridable_route():
+        is_admin = current_token.claims.get("admin")
+        return {"message": f"Hello, {'admin' if is_admin else username}!"}, 200
 
 Indices and tables
 ==================

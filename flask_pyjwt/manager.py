@@ -186,6 +186,7 @@ class AuthManager:
             subject (:obj:`str` | :obj:`int`): Value for the ``sub`` claim.
             scope (:obj:`str` | :obj:`dict`): Optional ``scope`` claim for
                 authorizations. Defaults to ``None``.
+            **kwargs: Any additional claims to add to the JWT.
 
         Returns:
             :class:`~flask_pyjwt.jwt.JWT`: Token with a ``type`` claim of "auth".
