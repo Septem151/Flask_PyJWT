@@ -10,4 +10,4 @@ from .typing import TokenType as TokenType
 from .utils import current_token as current_token
 from .utils import require_token as require_token
 
-__version__ = "0.1.8"
+__version__ = "0.1.9"

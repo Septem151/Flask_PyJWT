@@ -8,7 +8,7 @@ from .config import DOMAIN, test_claims, test_override, test_scope
 
 def test_version():
     """Assert that the version of flask_pyjwt matches the expected version."""
-    assert __version__ == "0.1.8"
+    assert __version__ == "0.1.9"
 
 
 def test_auth_manager_creates_valid_auth_token(

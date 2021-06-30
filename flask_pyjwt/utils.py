@@ -1,5 +1,6 @@
 import re
 import typing as t
+from copy import deepcopy
 from functools import wraps
 from http import HTTPStatus
 
@@ -97,11 +98,12 @@ def require_token(
     if location == "cookies":
         if not cookie_name:
             raise AttributeError('cookie_name must be set when location is "cookies"')
-    required_claim_keys = kwargs
 
     def decorator(func):
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*a, **k):
+            required_claim_keys = deepcopy(kwargs)
+            print(required_claim_keys)
             if location == "header":
                 auth_header = request.headers.get("Authorization")
                 if not auth_header or not is_valid_auth_header(auth_header):
@@ -125,15 +127,15 @@ def require_token(
                 )
             if override and _check_claims(override, jwt.claims):
                 _add_jwt_to_request_ctx(jwt)
-                return func(*args, **kwargs)
+                return func(*a, **k)
             required_claims = {}
-            for key, val in kwargs.items():
+            for key, val in k.items():
                 if key in required_claim_keys.values():
                     claim_key = list(required_claim_keys.keys())[
                         list(required_claim_keys.values()).index(key)
                     ]
                     required_claims[claim_key] = val
-                required_claim_keys.pop(claim_key)
+                    required_claim_keys.pop(claim_key)
             for key, val in required_claim_keys.items():
                 required_claims[key] = val
             if required_claims and not _check_claims(required_claims, jwt.claims):
@@ -141,7 +143,7 @@ def require_token(
             if scope and not _check_claims(scope, jwt.claims.get("scope")):
                 abort(HTTPStatus.FORBIDDEN, "Missing required scope(s)")
             _add_jwt_to_request_ctx(jwt)
-            return func(*args, **kwargs)
+            return func(*a, **k)
 
         return wrapper
 
