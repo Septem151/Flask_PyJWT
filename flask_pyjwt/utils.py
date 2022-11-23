@@ -4,9 +4,10 @@ from copy import deepcopy
 from functools import wraps
 from http import HTTPStatus
 
-from flask import abort, current_app, request
+from flask import abort, current_app
+from flask import g as request_ctx
+from flask import request
 from flask.ctx import has_request_context
-from flask.globals import _request_ctx_stack
 from werkzeug.local import LocalProxy
 
 from .jwt import JWT
@@ -103,7 +104,6 @@ def require_token(
         @wraps(func)
         def wrapper(*a, **k):
             required_claim_keys = deepcopy(kwargs)
-            print(required_claim_keys)
             if location == "header":
                 auth_header = request.headers.get("Authorization")
                 if not auth_header or not is_valid_auth_header(auth_header):
@@ -113,10 +113,10 @@ def require_token(
                     )
                 jwt_token = auth_header[7:]
             else:
-                jwt_token = request.cookies.get(cookie_name)
+                jwt_token = request.cookies.get(cookie_name)  # type: ignore
                 if not jwt_token:
                     abort(HTTPStatus.UNAUTHORIZED, f"Missing {token_type} cookie")
-            auth_manager: AuthManager = current_app.auth_manager
+            auth_manager: AuthManager = current_app.extensions["pyjwt_authmanager"]
             is_valid_token = auth_manager.verify_token(jwt_token)
             if not is_valid_token:
                 abort(HTTPStatus.UNAUTHORIZED, f"{token_type} token is not valid")
@@ -193,8 +193,7 @@ def _add_jwt_to_request_ctx(jwt_token: JWT) -> None:
         jwt_token (:class:`~flask_pyjwt.jwt.JWT`): Token to add to the request's
             context.
     """
-    ctx = _request_ctx_stack.top
-    ctx.jwt_token = jwt_token
+    request_ctx._flask_pyjwt_jwt_token = jwt_token  # pylint: disable=protected-access
 
 
 def _get_jwt() -> t.Optional[JWT]:
@@ -206,13 +205,13 @@ def _get_jwt() -> t.Optional[JWT]:
         or ``None`` if there is no request context or the request context has no
         ``jwt_token`` attribute.
     """
-    if has_request_context() and hasattr(_request_ctx_stack.top, "jwt_token"):
-        jwt_token: JWT = getattr(_request_ctx_stack.top, "jwt_token")
+    if has_request_context():
+        jwt_token: JWT = request_ctx.get("_flask_pyjwt_jwt_token", None)
         return jwt_token
     return None
 
 
-current_token: JWT = LocalProxy(lambda: _get_jwt())  # type: ignore # pylint: disable=unnecessary-lambda
+current_token: JWT = LocalProxy(_get_jwt)  # type: ignore[assignment]
 """A proxy for the current request context's JWT.
 
 Usage::

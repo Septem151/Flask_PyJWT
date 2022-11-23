@@ -1,6 +1,7 @@
 import pytest
 from flask import Flask
 from flask import request as flask_request
+
 from flask_pyjwt import AuthManager, current_token, require_token
 
 from .config import app_configs, test_claims, test_override, test_scope
@@ -10,7 +11,7 @@ from .config import app_configs, test_claims, test_override, test_scope
     name="flask_app",
     params=app_configs,
 )
-def fixture_flask_app(request):
+def fixture_flask_app(request):  # pylint: disable=too-many-locals
     """PyTest Fixture of a Flask App."""
     app = Flask(__name__)
     app.config["TESTING"] = True
@@ -21,7 +22,7 @@ def fixture_flask_app(request):
 
     @app.route("/token", methods=["POST"])
     def auth_token_route():
-        json_data: dict = flask_request.get_json()
+        json_data: dict = flask_request.get_json()  # type: ignore[assignment]
         sub = json_data.pop("sub")
         scope = json_data.pop("scope", None)
         auth_token = auth_manager.auth_token(sub, scope, **json_data)
@@ -34,7 +35,7 @@ def fixture_flask_app(request):
 
     @app.route("/refresh", methods=["POST"])
     def refresh_token_route():
-        json_data: dict = flask_request.get_json()
+        json_data: dict = flask_request.get_json()  # type: ignore[assignment]
         sub = json_data["sub"]
         refresh_token = auth_manager.refresh_token(sub)
         return {

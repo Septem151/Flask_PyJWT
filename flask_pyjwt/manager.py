@@ -23,7 +23,7 @@ def _requires_signer(func):
 
     @wraps(func)
     def wrapper(*args, **kwargs):
-        auth_manager: "AuthManager" = args[0]
+        auth_manager: AuthManager = args[0]
         if auth_manager.signer is None:
             raise MissingSignerError(
                 "AuthManager is missing the required signer attribute"
@@ -103,7 +103,6 @@ class AuthManager:
     ) -> None:
         load_dotenv(dotenv_path)
         if app is not None:
-            self.app = app
             self.init_app(app)
 
     def init_app(self, app: Flask) -> None:
@@ -171,7 +170,7 @@ class AuthManager:
         self.signer = AuthData(
             auth_type, secret, issuer, auth_max_age, refresh_max_age, public_key
         )
-        app.auth_manager = self
+        app.extensions["pyjwt_authmanager"] = self
 
     @_requires_signer
     def auth_token(

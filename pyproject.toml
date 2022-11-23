@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "flask_pyjwt"
-version = "0.1.9"
+version = "0.2.0"
 description = "Flask extension for creating, verifying, and requiring the presence of JWTs"
 license = "MIT"
 authors = ["Carson Mullins <septem151@protonmail.com>"]
@@ -21,18 +21,19 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.8"
-PyJWT = "^2.1.0"
-Flask = "^1.1"
-cryptography = "^3.4.7"
-python-dotenv = "^0.17.1"
+PyJWT = "^2.6.0"
+flask = "^2.2.2"
+cryptography = "^38.0.3"
+python-dotenv = "^0.21.0"
+pyjwt = "^2.6.0"
 
-[tool.poetry.dev-dependencies]
-pytest = "^5.2"
-black = "^21.5b1"
-isort = "^5.8.0"
-pylint = "^2.8.2"
-Sphinx = "^4.0.1"
-mypy = "^0.812"
+[tool.poetry.group.dev.dependencies]
+black = "^22.10.0"
+pytest = "^7.2.0"
+isort = "^5.10.1"
+pylint = "^2.15.6"
+sphinx = "^5.3.0"
+mypy = "^0.991"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -45,8 +46,19 @@ profile = "black"
 max-args = 6
 
 [tool.pylint.messages_control]
-# Disable bad-continuation, bad-whitespace, missing-module-docstring
-disable = "C0330, C0326, C0114"
+# Disable missing-module-docstring
+disable = "C0114"
 
 [tool.pylint.format]
 max-line-length = "88"
+
+[tool.mypy]
+warn_return_any = true
+warn_unused_configs = true
+warn_unreachable = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+show_column_numbers = true
+check_untyped_defs = true
+follow_imports = "silent"
+exclude = "doc/"
