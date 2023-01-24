@@ -13,6 +13,7 @@
 #
 import os
 import sys
+from importlib import metadata
 
 sys.path.insert(0, os.path.abspath("../"))
 
@@ -20,11 +21,11 @@ sys.path.insert(0, os.path.abspath("../"))
 # -- Project information -----------------------------------------------------
 
 project = "Flask_PyJWT"
-copyright = "2021, Carson Mullins"
+copyright = "2023, Carson Mullins"
 author = "Carson Mullins"
 
 # The full version, including alpha/beta/rc tags
-release = "0.3.0"
+release = metadata.version("flask_pyjwt")
 
 
 # -- General configuration ---------------------------------------------------

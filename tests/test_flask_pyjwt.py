@@ -1,3 +1,5 @@
+from importlib import metadata
+
 import pytest  # pylint: disable=unused-import
 from flask import Flask, Response
 from flask.testing import FlaskClient
@@ -9,7 +11,7 @@ from .config import DOMAIN, test_claims, test_override, test_scope
 
 def test_version():
     """Assert that the version of flask_pyjwt matches the expected version."""
-    assert __version__ == "0.1.9"
+    assert __version__ == metadata.version("flask_pyjwt")
 
 
 def test_auth_manager_creates_valid_auth_token(
