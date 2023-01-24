@@ -8,7 +8,7 @@ auth or refresh tokens, and can require the presence of additional claims and th
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
-   
+
    installation
    quickstart
    configuration
@@ -45,16 +45,16 @@ Example
         auth_token = auth_manager.auth_token(username, authorizations)
         refresh_token = auth_manager.refresh_token(username)
         return {
-            "auth_token": auth_token.signed, 
+            "auth_token": auth_token.signed,
             "refresh_token": refresh_token.signed
         }, 200
-    
+
     # Protect routes by requiring auth tokens
     @app.route("/protected_route")
     @require_token()
     def protected_route():
         return {"message": "You've reached the protected route!"}, 200
-    
+
     # Provision new auth tokens by requiring refresh tokens
     @app.route("/refresh", method=["POST"])
     @require_token("refresh")
@@ -66,26 +66,26 @@ Example
         return {
             "auth_token": new_auth_token.signed
         }, 200
-    
+
     # Require specific claims in auth or refresh tokens
     # to match a route's rule variables
     @app.route("/user_specific_route/<string:username>")
     @require_token(sub="username")
     def user_specific_route(username):
         return {"message": f"Hello, {username}!"}, 200
-    
+
     # Require arbitrary claims in auth or refresh tokens
     @app.route("/custom_claim_route")
     @require_token(custom_claim="Arbitrary Required Value")
     def custom_claim_route():
         return {"message": "You've reached the custom claim route!"}, 200
-    
+
     # Require authorizations to be present in an auth token's scope
     @app.route("/admin_dashboard")
     @require_token(scope={"admin": True})
     def admin_dashboard():
         return {"message": f"Hello admin!"}
-    
+
     # Access the current token's information using current_token
     @app.route("/token/info")
     @require_token()
@@ -98,7 +98,7 @@ Example
             "is_signed": current_token.is_signed()
             "signed_token": current_token.signed,
         }
-    
+
     # Require authorization to be present in an auth token's scope or claims, but
     # with the option to override those values with other claims
     @app.route("/overridable_route/<string:username>")

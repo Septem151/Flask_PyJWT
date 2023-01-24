@@ -15,7 +15,7 @@ JWT_ISSUER
 JWT_AUTHTYPE
 ^^^^^^^^^^^^
 
-(:obj:`str`): The type of auth to use for your JWTs 
+(:obj:`str`): The type of auth to use for your JWTs
 (HMACSHA256, HMACSHA512, RSA256, RSA512).
 
 Accepted Values:
