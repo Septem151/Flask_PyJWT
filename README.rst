@@ -10,17 +10,25 @@ require the presence of additional claims and their values.
 Installation
 ************
 
-Flask_PyJWT can be installed with ``pip``:
+Flask_PyJWT is availabe on `PyPi <https://pypi.org/project/flask-pyjwt/>`_
+and can be installed with ``pip``:
 
 .. code-block:: console
 
     pip install Flask_PyJWT
 
-A python version of 3.8 or higher is officially supported. Other versions of Python 3.x
-may work, but have not been tested.
 
-Currently, only Flask 1.1.x is officially supported. Flask 2.x *may* work, but has not
-been tested.
+or with ``poetry``:
+
+.. code-block:: console
+
+    poetry add Flask_PyJWT
+
+A python version of ^3.8 is required.
+
+Flask_PyJWT v1.x supports Flask versions ^2. If you are using Flask version ~=1.1,
+please use `Flask PyJWT v0.x <https://flask-pyjwt.readthedocs.io/en/v0/>`_ instead.
+
 
 *************
 Documentation
@@ -116,16 +124,16 @@ Example Usage
         auth_token = auth_manager.auth_token(username, authorizations)
         refresh_token = auth_manager.refresh_token(username)
         return {
-            "auth_token": auth_token.signed, 
+            "auth_token": auth_token.signed,
             "refresh_token": refresh_token.signed
         }, 200
-    
+
     # Protect routes by requiring auth tokens
     @app.route("/protected_route")
     @require_token()
     def protected_route():
         return {"message": "You've reached the protected route!"}, 200
-    
+
     # Provision new auth tokens by requiring refresh tokens
     @app.route("/refresh", method=["POST"])
     @require_token("refresh")
@@ -137,26 +145,26 @@ Example Usage
         return {
             "auth_token": new_auth_token.signed
         }, 200
-    
+
     # Require specific claims in auth or refresh tokens
     # to match a route's rule variables
     @app.route("/user_specific_route/<string:username>")
     @require_token(sub="username")
     def user_specific_route(username):
         return {"message": f"Hello, {username}!"}, 200
-    
+
     # Require arbitrary claims in auth or refresh tokens
     @app.route("/custom_claim_route")
     @require_token(custom_claim="Arbitrary Required Value")
     def custom_claim_route():
         return {"message": "You've reached the custom claim route!"}, 200
-    
+
     # Require authorizations to be present in an auth token's scope
     @app.route("/admin_dashboard")
     @require_token(scope={"admin": True})
     def admin_dashboard():
         return {"message": f"Hello admin!"}
-    
+
     # Access the current token's information using current_token
     @app.route("/token/info")
     @require_token()
