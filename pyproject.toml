@@ -33,7 +33,8 @@ black = "^21.5b1"
 isort = "^5.8.0"
 pylint = "^2.8.2"
 Sphinx = "^4.0.1"
-mypy = "^0.812"
+mypy = "^0.991"
+types-flask = "^1.1.6"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -46,8 +47,8 @@ profile = "black"
 max-args = 6
 
 [tool.pylint.messages_control]
-# Disable bad-continuation, bad-whitespace, missing-module-docstring
-disable = "C0330, C0326, C0114"
+# missing-module-docstring
+disable = "C0114"
 
 [tool.pylint.format]
 max-line-length = "88"

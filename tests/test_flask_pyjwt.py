@@ -1,6 +1,7 @@
 import pytest  # pylint: disable=unused-import
 from flask import Flask, Response
 from flask.testing import FlaskClient
+
 from flask_pyjwt import AuthManager, __version__
 
 from .config import DOMAIN, test_claims, test_override, test_scope

@@ -103,7 +103,7 @@ def require_token(
         @wraps(func)
         def wrapper(*a, **k):
             required_claim_keys = deepcopy(kwargs)
-            print(required_claim_keys)
+            jwt_token: t.Optional[str]
             if location == "header":
                 auth_header = request.headers.get("Authorization")
                 if not auth_header or not is_valid_auth_header(auth_header):
@@ -113,7 +113,7 @@ def require_token(
                     )
                 jwt_token = auth_header[7:]
             else:
-                jwt_token = request.cookies.get(cookie_name)
+                jwt_token = request.cookies.get(cookie_name)  # type: ignore[arg-type]
                 if not jwt_token:
                     abort(HTTPStatus.UNAUTHORIZED, f"Missing {token_type} cookie")
             auth_manager: AuthManager = current_app.auth_manager
