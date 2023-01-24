@@ -3,7 +3,7 @@ Quickstart
 
 To quickly get up and running with Flask_PyJWT, follow the steps in :ref:`Initial Setup`.
 
-For common use cases, see the sections for :ref:`Creating JWTs`, :ref:`Requiring JWTs`, 
+For common use cases, see the sections for :ref:`Creating JWTs`, :ref:`Requiring JWTs`,
 :ref:`Route Variable Rules`, :ref:`Requiring Authorization`, :ref:`Using the Current Token`,
 and :ref:`Overriding Required Authorization`.
 
@@ -84,7 +84,7 @@ The :class:`~flask_pyjwt.manager.AuthManager` is all we need to create new JWTs:
         auth_token = auth_manager.auth_token(username, authorizations)
         refresh_token = auth_manager.refresh_token(username)
         return {
-            "auth_token": auth_token.signed, 
+            "auth_token": auth_token.signed,
             "refresh_token": refresh_token.signed
         }, 200
 
@@ -96,7 +96,7 @@ Requiring JWTs
 --------------
 
 The :class:`~flask_pyjwt.utils.require_token` decorator is used to require the presence
-of JWTs in a request. For this example, we'll be expecting an auth token in the 
+of JWTs in a request. For this example, we'll be expecting an auth token in the
 ``Authorization`` header, which is the default setting for :class:`~flask_pyjwt.utils.require_token`::
 
     # file: app.py
@@ -106,7 +106,7 @@ of JWTs in a request. For this example, we'll be expecting an auth token in the
 
     app = Flask(__name__)
     auth_manager = AuthManager(app)
-    
+
     @app.route("/protected_route")
     @require_token()
     def protected_route():
@@ -117,7 +117,7 @@ of JWTs in a request. For this example, we'll be expecting an auth token in the
 Route Variable Rules
 --------------------
 
-To make sure that only certain users can access specific routes, we can use the route's 
+To make sure that only certain users can access specific routes, we can use the route's
 variable rules::
 
     # file: app.py
@@ -127,7 +127,7 @@ variable rules::
 
     app = Flask(__name__)
     auth_manager = AuthManager(app)
-    
+
     @app.route("/user_specific_route/<string:username>")
     @require_token(sub="username")
     def user_specific_route(username):
@@ -147,7 +147,7 @@ Flask_PyJWT know to use the ``username`` value passed in from the URL.
 Requiring Authorization
 -----------------------
 
-To require specific authorization for routes, such as accessing an admin-only URL, 
+To require specific authorization for routes, such as accessing an admin-only URL,
 we can use the ``scope`` parameter. Although other custom claims can be used for authorization
 purposes (and return 403 Forbidden responses when not present), it is best practice to
 put authorizations in the ``scope`` claim::
@@ -159,7 +159,7 @@ put authorizations in the ``scope`` claim::
 
     app = Flask(__name__)
     auth_manager = AuthManager(app)
-    
+
     @app.route("/admin_dashboard")
     @require_token(scope={"admin": True})
     def admin_dashboard():
@@ -170,7 +170,7 @@ put authorizations in the ``scope`` claim::
 Using the Current Token
 -----------------------
 
-If you need access to the current token being used in the request, use the 
+If you need access to the current token being used in the request, use the
 :data:`~flask_pyjwt.utils.current_token` proxy::
 
     # file: app.py
@@ -180,7 +180,7 @@ If you need access to the current token being used in the request, use the
 
     app = Flask(__name__)
     auth_manager = AuthManager(app)
-    
+
     @app.route("/token/info")
     @require_token()
     def extract_token_info():

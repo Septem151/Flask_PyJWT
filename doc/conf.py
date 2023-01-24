@@ -24,7 +24,7 @@ copyright = "2021, Carson Mullins"
 author = "Carson Mullins"
 
 # The full version, including alpha/beta/rc tags
-release = "0.1.9"
+release = "0.3.0"
 
 
 # -- General configuration ---------------------------------------------------
